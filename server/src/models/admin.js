@@ -12,6 +12,6 @@ const schemaOptions = require('./modelOptions')
         type: String,
         required: true
     }
-}, schemaOptions)
+}, schemaOptions);
 
 module.exports = mongoose.model('Admin', adminSchema);

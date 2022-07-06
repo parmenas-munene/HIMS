@@ -2,32 +2,38 @@ const CryptoJs = require('crypto-js');
 const jwt = require('jsonwebtoken');
 const { Admin } = require('../models');
 
-exports.login = async(req, res) => {
-   try {
-      //verifying username
+exports.login = async (req, res) => {
+   try{
+      const { username, passwd } = req.body; 
+      if(!username || !passwd) return res.status(400).json('username and password required!');
+
       const admin = await Admin.findOne({
-         username: req.body.username
+         username: username,
       });
       if(!admin) return res.status(401).json('wrong username');
-      //verfying password
+
       const decryptedPassword = CryptoJs.AES.decrypt(
-         password,
+         admin.password,
          process.env.PASSWORD_SECRETE_KEY
+      ).toString(CryptoJs.enc.utf8);
+      if(decryptedPassword !== passwd) return res.status(401).json('wrong password');
+      
+      const token = jwt.sign(
+         {
+            id: admin._id,
+         },
+         process.env.TOKEN_SECRETE_KEY,
+         { expiresIn: '10s' }
       );
-      if(decryptedPassword !== req.body.password) return res.status(401).json('wromg password');
-
-      const token = jwt.sign({
-         id: admin._id
-      }, process.env.TOKEN_SECRETE_KEY);
       admin.password = undefined
-
+      
       res.status(200).json({
          token,
          admin
       });
-
-   } catch (error) {
-      console.log(error);
-      res.status(500).json(error)
+      
+   }catch(error){
+      console.error(error)
+      res.status(500).json(error);
    }
 }
